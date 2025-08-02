@@ -2,6 +2,7 @@ const express = require('express')
 const dotenv = require('dotenv')
 const dbInit = require('./db/mongo_init')
 const userRoute = require("./routes/user.route")
+const uploadRoute = require("./routes/upload.route")
 const morgan = require("morgan")
 const bodyParser = require("body-parser")
 dotenv.config()
@@ -14,12 +15,12 @@ app.use(bodyParser.json())
 
 const port = 3000;
 
-
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 
 app.use("/api/users", userRoute)
+app.use("/api/upload", uploadRoute)
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

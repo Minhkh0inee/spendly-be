@@ -2,6 +2,7 @@ const { extractTextFromImage } = require("../utils/ocr.service");
 const { parseReceiptText } = require("../utils/parseReceipt");
 const { callGeminiForReceipt } = require("../utils/gemini.service");
 const { sendSuccess, sendError } = require("../utils/response.util");
+const { Receipt } = require("../models/receipt.model");
 
 const upload = async (req, res) => {
   try {
@@ -11,7 +12,11 @@ const upload = async (req, res) => {
 
     let geminiParsed = await callGeminiForReceipt(ocrText);
 
-    if (!geminiParsed || typeof geminiParsed !== 'object' || !geminiParsed.vendor) {
+    if (
+      !geminiParsed ||
+      typeof geminiParsed !== "object" ||
+      !geminiParsed.vendor
+    ) {
       console.warn("Gemini failed or incomplete — using fallback parser");
       geminiParsed = parseReceiptText(ocrText);
     }
@@ -23,4 +28,27 @@ const upload = async (req, res) => {
   }
 };
 
-module.exports = { upload };
+const saveReceipt = async (req, res) => {
+  try {
+    const { vendor, date, invoiceNumber, address, amount, items } = req.body;
+    const newReceipt = new Receipt({
+      vendor,
+      date,
+      address,
+      invoiceNumber,
+      items,
+      amount,
+    });
+    const insertedNewReceipt = await newReceipt.save();
+    return sendSuccess(
+      res,
+      201,
+      insertedNewReceipt,
+      "Save Receipt Successfully"
+    );
+  } catch (error) {
+    return sendError(res, 500, error, "Internal Server Error");
+  }
+};
+
+module.exports = { upload, saveReceipt };

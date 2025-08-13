@@ -17,7 +17,7 @@ const createUser = async (req, res) => {
     const insertedNewUser = await newUser.save();
     return sendSuccess(res, 201, insertedNewUser, "Create Users Successfully");
   } catch (error) {
-    return sendError(res, 500, "INTERNAL_ERROR", "Failed to retrive users");
+    return sendError(res, 500, "INTERNAL_ERROR", "Failed to create users");
   }
 };
 

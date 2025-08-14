@@ -44,6 +44,11 @@ const ReceiptSchema = new mongoose.Schema(
             min: [0, "Price must be positive"],
         }
     }],
+    imgUrl: {
+      type: String,
+      required: [true, "imgUrl is required"],
+      trim: true,
+    },
   },
   { timestamps: true }
 );

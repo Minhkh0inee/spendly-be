@@ -3,6 +3,7 @@ const { parseReceiptText } = require("../utils/parseReceipt");
 const { callGeminiForReceipt } = require("../utils/gemini.service");
 const { sendSuccess, sendError } = require("../utils/response.util");
 const { Receipt } = require("../models/receipt.model");
+const { uploadCloudinary } = require("../utils/cloudinary.service");
 
 const upload = async (req, res) => {
   try {
@@ -51,4 +52,17 @@ const saveReceipt = async (req, res) => {
   }
 };
 
-module.exports = { upload, saveReceipt };
+const uploadToCloudinary = async (req, res) => {
+  try {
+    const cloudinaryResult = await uploadCloudinary(req.file.buffer, {
+      folder: "spendly-receipts",
+      resource_type: "image",
+    });
+    return sendSuccess(res, 200, cloudinaryResult, "Upload To Cloudinary successful");
+  } catch (error) {
+    console.log(error)
+    return sendError(res, 500, error, "Internal Server Error");
+  }
+};
+
+module.exports = { upload, saveReceipt, uploadToCloudinary };

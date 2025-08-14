@@ -12,8 +12,8 @@ const expenseSchema = new mongoose.Schema({
   category: { type: String }, 
 
   notes: { type: String },
-  receiptUrl: { type: String }, // Cloudinary or S3 URL
-  rawText: { type: String },    // OCR output (optional)
+  receiptUrl: { type: String }, 
+  rawText: { type: String },    
 
 }, { timestamps: true });
 

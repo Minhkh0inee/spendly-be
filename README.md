@@ -6,6 +6,7 @@ A Node.js backend application for expense management that processes receipt imag
 
 - **Receipt Processing**: Upload receipt images and extract text using Tesseract.js OCR
 - **AI-Powered Parsing**: Uses Google's Gemini AI to intelligently parse receipt data
+- **Cloud Storage**: Automatic image upload and storage using Cloudinary
 - **User Management**: Complete CRUD operations for user accounts
 - **Fallback Parser**: Custom receipt parsing logic when AI parsing fails
 - **RESTful API**: Clean API endpoints for all operations
@@ -15,6 +16,7 @@ A Node.js backend application for expense management that processes receipt imag
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
+- **Cloud Storage**: Cloudinary for image storage and optimization
 - **OCR**: Tesseract.js
 - **AI Integration**: Google Generative AI (Gemini)
 - **File Upload**: Multer
@@ -39,6 +41,7 @@ spendly-be/
 │   ├── upload.route.js       # Upload endpoints
 │   └── user.route.js         # User endpoints
 └── utils/
+    ├── cloudinary.service.js # Cloudinary image upload service
     ├── gemini.service.js     # Google Gemini AI integration
     ├── ocr.service.js        # OCR text extraction
     ├── parseReceipt.js       # Fallback receipt parser
@@ -67,6 +70,11 @@ spendly-be/
    
    # Google Gemini AI
    GEMINI_API_KEY=your_gemini_api_key_here
+   
+   # Cloudinary Configuration
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
    
    # Server Configuration
    PORT=3000
@@ -125,7 +133,16 @@ spendly-be/
         "qty": 1,
         "price": 25.50
       }
-    ]
+    ],
+    "image": {
+      "public_id": "spendly/receipts/abc123def456",
+      "secure_url": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/spendly/receipts/abc123def456.jpg",
+      "width": 800,
+      "height": 1200,
+      "format": "jpg",
+      "bytes": 156789,
+      "uploaded_at": "2024-01-15T10:30:45.000Z"
+    }
   },
   "message": "OCR and parsing successful"
 }
@@ -136,16 +153,21 @@ spendly-be/
 ### Receipt Processing Flow
 
 1. **Image Upload**: Client uploads receipt image via `/api/upload` endpoint
-2. **OCR Processing**: Tesseract.js extracts text from the image
-3. **AI Parsing**: Google Gemini AI analyzes the OCR text and extracts:
+2. **Cloud Storage**: Image is automatically uploaded to Cloudinary with optimizations:
+   - Stored in organized folders (`spendly/receipts`)
+   - Converted to JPG format for consistency
+   - Optimized quality and dimensions
+   - Generated secure URLs for access
+3. **OCR Processing**: Tesseract.js extracts text from the image buffer
+4. **AI Parsing**: Google Gemini AI analyzes the OCR text and extracts:
    - Vendor/store name
    - Purchase date
    - Invoice number
    - Store address
    - Total amount
    - Individual items with quantities and prices
-4. **Fallback Parser**: If AI parsing fails, a custom parser extracts basic information
-5. **Response**: Structured JSON data is returned to the client
+5. **Fallback Parser**: If AI parsing fails, a custom parser extracts basic information
+6. **Response**: Structured JSON data including parsed receipt data and Cloudinary image information
 
 ### OCR Configuration
 
@@ -160,6 +182,9 @@ The OCR service is configured with:
 |----------|-------------|----------|
 | `MONGODB_URI` | MongoDB connection string | Yes |
 | `GEMINI_API_KEY` | Google Gemini AI API key | Yes |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
 | `PORT` | Server port (default: 3000) | No |
 
 ## Development
@@ -174,6 +199,7 @@ The OCR service is configured with:
 **Production:**
 - `express` - Web framework
 - `mongoose` - MongoDB ODM
+- `cloudinary` - Cloud image storage and optimization
 - `multer` - File upload handling
 - `tesseract.js` - OCR processing
 - `@google/generative-ai` - Google Gemini AI

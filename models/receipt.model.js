@@ -49,6 +49,11 @@ const ReceiptSchema = new mongoose.Schema(
       required: [true, "imgUrl is required"],
       trim: true,
     },
+    category: {
+      type: String,
+      required: [true, "Category is Required"],
+      trim: true,
+    },
   },
   { timestamps: true }
 );

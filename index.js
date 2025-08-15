@@ -15,10 +15,21 @@ const categoryRoute = require("./routes/category.route")
 
 const app = express();
 dbInit.initMongoDB()
+
+app.use((req, res, next) => {
+  req.setTimeout(60000, () => {
+    res.status(408).json({ 
+      success: false, 
+      error: { code: 'TIMEOUT', message: 'Request timeout' } 
+    });
+  });
+  next();
+});
+
 app.use(morgan('dev'))
 app.use(cors())
-app.use(bodyParser.urlencoded())
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ limit: '10mb' }))
+app.use(bodyParser.json({ limit: '10mb' }))
 app.use(cookieParser());
 
 const port = 3000;

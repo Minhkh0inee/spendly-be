@@ -8,43 +8,63 @@ cloudinary.config({
 });
 
 const uploadCloudinary = async (buffer, options = {}) => {
-  try {
-    return new Promise((resolve, reject) => {
-      const uploadOptions = {
-        folder: 'spendly-receipts',
-        resource_type: 'image',
-        format: 'jpg',
-        quality: 'auto',
-        transformation: [
-          { width: 1000, height: 1000, crop: 'limit' },
-          { quality: 'auto' }
-        ],
-        ...options
-      };
+  const maxRetries = 3;
+  let attempt = 0;
 
-      cloudinary.uploader.upload_stream(
-        uploadOptions,
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            reject(error);
-          } else {
-            resolve({
-              public_id: result.public_id,
-              secure_url: result.secure_url,
-              width: result.width,
-              height: result.height,
-              format: result.format,
-              bytes: result.bytes,
-              created_at: result.created_at
-            });
+  while (attempt < maxRetries) {
+    try {
+      return new Promise((resolve, reject) => {
+        const uploadOptions = {
+          folder: 'spendly-receipts',
+          resource_type: 'image',
+          format: 'jpg',
+          quality: 'auto:good',
+          transformation: [
+            { width: 1000, height: 1000, crop: 'limit' },
+            { quality: 'auto:good' }
+          ],
+          timeout: options.timeout || 30000,
+          ...options
+        };
+
+        const uploadStream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) {
+              console.error(`Cloudinary upload error (attempt ${attempt + 1}):`, error);
+              reject(error);
+            } else {
+              resolve({
+                public_id: result.public_id,
+                secure_url: result.secure_url,
+                width: result.width,
+                height: result.height,
+                format: result.format,
+                bytes: result.bytes,
+                created_at: result.created_at
+              });
+            }
           }
-        }
-      ).end(buffer);
-    });
-  } catch (error) {
-    console.error('Upload to Cloudinary failed:', error);
-    throw new Error('Failed to upload image to Cloudinary');
+        );
+
+        uploadStream.end(buffer);
+
+        setTimeout(() => {
+          uploadStream.destroy();
+          reject(new Error('Upload timeout exceeded'));
+        }, uploadOptions.timeout);
+      });
+    } catch (error) {
+      attempt++;
+      console.error(`Upload attempt ${attempt} failed:`, error.message);
+      
+      if (attempt >= maxRetries) {
+        console.error('Upload to Cloudinary failed after all retries');
+        throw new Error('Failed to upload image to Cloudinary after multiple attempts');
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
   }
 };
 

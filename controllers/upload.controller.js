@@ -4,6 +4,7 @@ const { callGeminiForReceipt } = require("../utils/gemini.service");
 const { sendSuccess, sendError } = require("../utils/response.util");
 const { Receipt } = require("../models/receipt.model");
 const { uploadCloudinary } = require("../utils/cloudinary.service");
+const { parseItems } = require("../utils/parseItems");
 
 const upload = async (req, res) => {
   try {
@@ -31,23 +32,51 @@ const upload = async (req, res) => {
 
 const saveReceipt = async (req, res) => {
   try {
-    const { vendor, date, invoiceNumber, address, amount, items } = req.body;
+    if (!req.file) {
+      return sendError(res, 400, {}, "No file uploaded");
+    }
+
+    const { vendor, date, invoiceNumber, address, amount, items, category } = req.body;
+    let parsedItems;
+    try {
+      parsedItems = parseItems(items);
+    } catch (err) {
+      return sendError(res, 400, {}, err.message);
+    }
+
+    const uploadPromise = uploadCloudinary(req.file.buffer, {
+      folder: 'spendly-receipts',
+      resource_type: 'image',
+      timeout: 30000
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Upload timeout')), 35000);
+    });
+
+    let cloudinaryResult;
+    try {
+      cloudinaryResult = await Promise.race([uploadPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('Cloudinary upload failed:', error);
+      return sendError(res, 408, {}, "File upload timeout or failed");
+    }
+
     const newReceipt = new Receipt({
       vendor,
       date,
       address,
       invoiceNumber,
-      items,
       amount,
+      items: parsedItems,
+      imgUrl: cloudinaryResult.secure_url,
+      category
     });
-    const insertedNewReceipt = await newReceipt.save();
-    return sendSuccess(
-      res,
-      201,
-      insertedNewReceipt,
-      "Save Receipt Successfully"
-    );
+
+    const inserted = await newReceipt.save();
+    return sendSuccess(res, 201, inserted, "Save Receipt Successfully");
   } catch (error) {
+    console.error('Save receipt error:', error);
     return sendError(res, 500, error, "Internal Server Error");
   }
 };

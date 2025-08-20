@@ -12,6 +12,7 @@ const uploadRoute = require("./routes/upload.route")
 const authRoute = require("./routes/auth.route")
 const projectRoute = require("./routes/project.route")
 const categoryRoute = require("./routes/category.route")
+const receiptRoute = require('./routes/receipt.route')
 
 const app = express();
 dbInit.initMongoDB()
@@ -43,6 +44,8 @@ app.use("/api/upload", uploadRoute)
 app.use("/api/auth", authRoute)
 app.use("/api/projects", projectRoute)
 app.use("/api/categories", categoryRoute)
+app.use("/api/receipts", receiptRoute)
+
 
 
 

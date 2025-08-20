@@ -10,6 +10,7 @@ const ProjectSchema = new mongoose.Schema(
       required: true,
     },
     team: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    receipt: [{ type: mongoose.Schema.Types.ObjectId, ref: "Receipt" }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },

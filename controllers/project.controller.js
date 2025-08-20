@@ -5,7 +5,7 @@ const createProject = async (req, res) => {
     try {
         const {name, description, owner, team} = req.body;
         const newProject = new Project({
-            name, description, owner, team
+            name, description, owner, team, receipt
         })
         const insertedNewProject = await newProject.save()
         return sendSuccess(res, 201, insertedNewProject, "Project Created Successfully"); 
@@ -41,7 +41,7 @@ const getProject = async (req, res) => {
 
 const updateProject = async (req, res) => {
   const { id } = req.params;
-  const { name, description, owner, team } = req.body;
+  const { name, description, owner, team, receipt } = req.body;
   try {
     const projectFound = await Project.findById(id);
     if (!projectFound) {
@@ -58,6 +58,10 @@ const updateProject = async (req, res) => {
 
     if (team && Array.isArray(team) && team.length > 0) {
       updateQuery.push({ $addToSet: { team: { $each: team } } });
+    }
+
+    if (receipt && Array.isArray(receipt) && receipt.length > 0) {
+      updateQuery.push({ $addToSet: { receipt: { $each: receipt } } });
     }
 
     const projectUpdated = await Project.findOneAndUpdate(

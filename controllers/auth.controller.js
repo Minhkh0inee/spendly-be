@@ -5,7 +5,6 @@ const {
   generateToken,
 } = require("../utils/auth");
 const { sendError, sendSuccess } = require("../utils/response.util");
-const { syncAllUserRelationships } = require("../utils/syncRelationships");
 const AUTH_ERR = { error: "Invalid credentials" };
 
 
@@ -114,27 +113,5 @@ const getProfile = async (req, res) => {
   }
 };
 
-const syncUserData = async (req, res) => {
-  try {
-    if (!req.id) {
-      return sendError(res, 401, {}, "User authentication required");
-    }
 
-    const syncResult = await syncAllUserRelationships(req.id);
-    
-    if (syncResult.success) {
-      return sendSuccess(res, 200, {
-        projectCount: syncResult.projects.projectCount,
-        receiptCount: syncResult.receipts.receiptCount,
-        message: "User data synchronized successfully"
-      }, "Sync completed");
-    } else {
-      return sendError(res, 500, {}, "Failed to sync user data");
-    }
-  } catch (error) {
-    console.error("Sync user data error:", error);
-    return sendError(res, 500, {}, "Internal Server Error");
-  }
-};
-
-module.exports = { registerUser, signIn, getProfile, syncUserData };
+module.exports = { registerUser, signIn, getProfile };

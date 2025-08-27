@@ -54,6 +54,11 @@ const ReceiptSchema = new mongoose.Schema(
       required: [true, "Category is Required"],
       trim: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User reference is required"]
+    }
   },
   { timestamps: true }
 );

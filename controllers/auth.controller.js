@@ -5,6 +5,7 @@ const {
   generateToken,
 } = require("../utils/auth");
 const { sendError, sendSuccess } = require("../utils/response.util");
+const { syncAllUserRelationships } = require("../utils/syncRelationships");
 const AUTH_ERR = { error: "Invalid credentials" };
 
 
@@ -66,4 +67,74 @@ const signIn = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, signIn };
+const getProfile = async (req, res) => {
+  try {
+    if (!req.id) {
+      return sendError(res, 401, {}, "User authentication required");
+    }
+
+    // Sync user relationships to ensure data consistency
+    await syncAllUserRelationships(req.id);
+
+    const user = await User.findById(req.id)
+      .populate({
+        path: 'receipts',
+        options: { sort: { createdAt: -1 } }
+      })
+      .populate({
+        path: 'projects',
+        populate: {
+          path: 'receipt',
+          model: 'Receipt'
+        },
+        options: { sort: { createdAt: -1 } }
+      })
+      .select('-password');
+
+    if (!user) {
+      return sendError(res, 404, {}, "User not found");
+    }
+
+    const profileData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      receipts: user.receipts,
+      projects: user.projects,
+      receiptCount: user.receipts.length,
+      projectCount: user.projects.length,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
+
+    return sendSuccess(res, 200, profileData, "Profile retrieved successfully");
+  } catch (error) {
+    console.error("Get profile error:", error);
+    return sendError(res, 500, {}, "Internal Server Error");
+  }
+};
+
+const syncUserData = async (req, res) => {
+  try {
+    if (!req.id) {
+      return sendError(res, 401, {}, "User authentication required");
+    }
+
+    const syncResult = await syncAllUserRelationships(req.id);
+    
+    if (syncResult.success) {
+      return sendSuccess(res, 200, {
+        projectCount: syncResult.projects.projectCount,
+        receiptCount: syncResult.receipts.receiptCount,
+        message: "User data synchronized successfully"
+      }, "Sync completed");
+    } else {
+      return sendError(res, 500, {}, "Failed to sync user data");
+    }
+  } catch (error) {
+    console.error("Sync user data error:", error);
+    return sendError(res, 500, {}, "Internal Server Error");
+  }
+};
+
+module.exports = { registerUser, signIn, getProfile, syncUserData };

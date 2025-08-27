@@ -12,7 +12,7 @@ if (!token)
     const cleanToken = token.replace("Bearer ", "");
   try {
     const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET_KEY);
-    req.userId = decoded.userId;
+    req.id = decoded.id;
     next();
   } catch (error) {
     return sendError(res, 401, "INVALID_TOKEN", "Token Invalid - Access Denied")

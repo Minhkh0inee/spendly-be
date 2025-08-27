@@ -3,6 +3,7 @@ const { parseReceiptText } = require("../utils/parseReceipt");
 const { callGeminiForReceipt } = require("../utils/gemini.service");
 const { sendSuccess, sendError } = require("../utils/response.util");
 const { Receipt } = require("../models/receipt.model");
+const { User } = require("../models/user.model");
 const { uploadCloudinary } = require("../utils/cloudinary.service");
 const { parseItems } = require("../utils/parseItems");
 
@@ -34,6 +35,10 @@ const saveReceipt = async (req, res) => {
   try {
     if (!req.file) {
       return sendError(res, 400, {}, "No file uploaded");
+    }
+
+    if (!req.id) {
+      return sendError(res, 401, {}, "User authentication required");
     }
 
     const { vendor, date, invoiceNumber, address, amount, items, category } = req.body;
@@ -70,10 +75,17 @@ const saveReceipt = async (req, res) => {
       amount,
       items: parsedItems,
       imgUrl: cloudinaryResult.secure_url,
-      category
+      category,
+      createdBy: req.userId
     });
 
     const inserted = await newReceipt.save();
+
+    const user = await User.findById(req.userId);
+    if (user) {
+      await user.addReceipt(inserted._id);
+    }
+
     return sendSuccess(res, 201, inserted, "Save Receipt Successfully");
   } catch (error) {
     console.error('Save receipt error:', error);
